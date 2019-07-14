@@ -34,3 +34,4 @@ VALUES ( "scary","book", 10.2,3);
 INSERT INTO products (product_name, department,price,stock_quantity)
 VALUES ( "funny","book", 10.2,3);
 
+

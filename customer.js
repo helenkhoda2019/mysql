@@ -1,192 +1,98 @@
+// pull in required dependencies
 var mysql = require("mysql");
 var inquirer = require("inquirer");
-
 var connection = mysql.createConnection({
-  host: "localhost",
-  // Your port; if not 3306
-  port: 3306,
-  // Your username
-  user: "root",
-  // Your password
-  password: "root",
-  database: "bamazon_db"
+   host: "localhost",
+   // Your port; if not 3306
+   port: 3306,
+   // Your username
+   user: "root",
+   // Your password
+   password: "root",
+   database: "bamazon_db"
 });
-
+// dispaly all items available
 connection.connect(function (err) {
-  if (err) throw err;
-  else {
-    console.log("connected as id " + connection.threadId);
-    displayProducts();
-    //display the user the list of products thorough a function
-  }
+   if (err) throw err;
+   //show connectivity of SQL and Node.js
+   console.log("connected as id " + connection.threadId + "\n");
+   //query for all items available
+   connection.query("SELECT * FROM products", function (err, response) {
+       if (err) throw err;
+       console.table(response)
+       questionToBeAsked();
+   })
+   // connection.end();
 });
-
-//display the user the list of products
-function displayProducts() {
-  connection.query("SELECT * FROM products", function (err, res) {
-    if (err) {
-      console.log(err)
-    }
-    if (res) {
-      // for (var i = 0; i < res.length; i++) {
-      //   console.log('---------------------')
-      //   console.log('Product Id:' + res[i].item_id)
-      //   console.log('Product Name:' + res[i].product_name)
-      //   console.log('Depatment:' + res[i].department)
-      //   console.log('Price:' + res[i].price)
-      //   console.log('Quantity: ' + res[i].stock_quantity)
-      //   console.log('--------------------')
-      // }
-      console.table(res);
-    }
-    processPurchase();
-  })
+var questionToBeAsked = function () {
+   // prompt the user with a meaaage
+   inquirer.prompt([{
+       name: "id",
+       type: "input",
+       message: "Which product id would you like to purchase?",
+       validate: function (value) {
+           if (isNaN(value) == false) {
+               return true;
+           }
+           else {
+               return false;
+           }
+       }
+   },
+   {
+       name: "quantity",
+       type: "input",
+       message: " how many of units product would you like to buy?",
+       validate: function (value) {
+           if (isNaN(value) == false) {
+               return true;
+           }
+           else {
+               return false;
+           }
+       }
+   }]).then(function (answers) {
+       // setting user input to currentItem and currentQuality
+       var currentItem = answers.id;
+       var currentQuantity = answers.quantity;
+       // compare avaialble items and prompt msg if not available
+       connection.query("SELECT * FROM products where item_id=?",
+           [currentItem]
+           , function (err, response) {
+               if (err) throw err;
+               console.table(response)
+               matchQuantity(currentItem, currentQuantity);
+           })
+   })
 }
-
-
-
-//the user can buy a product through the id of the product
-
-
-function processPurchase() {
-  inquirer
-    .prompt([
-      {
-        type: "input",
-        name: "productID",
-        message: "Which product id would you like to purchase?"
-      },
-      {
-        type: "input",
-        name: "quantity",
-        message: "How many would you like to purchase?"
-      },
-    ])
-    .then(function (answer) {
-      var id = answer.productID;
-      var quantity = parseInt(answer.quantity);
-      lookIntoInventory(id, quantity)
-      // useritem = purchase.productID;
-      // userquantity= purchase.quantity;
-      // console.log(`You chose to purchase ${userquantity} ${databaseres[useritem-1].product_name}(s).`);
-      // checkforquantity();
-    })
-}
-
-
-
-//you have to see if you have enough products in the inventory
-function lookIntoInventory(itemId, quantity) {
-  connection.query('SELECT * from products WHERE item_id=?', [itemId], function (err, res) {
-    if (err) throw err;
-    if (res) {
-      console.log(quantity);
-      console.log(typeof quantity)
-      if (res[0].stock_quantity>= quantity){
-        var newQuantity = res.stock_quantity - parseInt(quantity);
-        console.log("we have enough! " +newQuantity +" :: "+ typeof newQuantity)
-        updateinventory(itemId, newQuantity)
-      } 
-      // console.log("cust wants this many: " + quantity);
-      // console.log("We have this many: " + res[0].stock_quantity);
-    }
-  })
-}
-
-function updateinventory(itemId, quantity) {
-  console.log(quantity,typeof quantity);
-  connection.query('UPDATE products SET ? where ?', [{stock_quantity:quantity},{item_id: itemId}], function (err, res) {
-    if (err) console.log(err);
-  })
-}
-
-  //code here
-
-
-
-
-
-
-//and you are going to process the purchase
-
-
-// and you are going to update your inventory
-
-
-
-//if you don't have enough you are going to tell the to select again
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// function productdisplay(){
-
-
-// }
-
-// function userprompt() {
-//     inquirer
-//         .prompt([
-//             {
-//                 type: 'list',
-//                 name: 'action',
-//                 message: 'id of products customers like to buy?',
-//                 choices: [
-//                     'CD',
-//                     'DVD',
-
-//                 ]
-//             },
-//         ])
-//         .then(choice => {
-//             var actionchoice = choice.action
-
-//             if (actionchoice == "CD") {
-//                 CDitem();
-//             }
-//             if (actionchoice == "DVD") {
-//                 DVDitem();
-//             }
-
-//         })
-//  };
-
-
-//  inquirer
-//   .prompt([
-//     {
-//         type: "input",
-//         name: "productID",
-//         message: "Which product would you like to purchase?"
-//       },
-//       {
-//         type: "input",
-//         name: "quantity",
-//         message: "How many would you like to purchase?"
-//       },
-//   ])
-//   .then(function(purchase) {
-
-//     useritem = purchase.productID;
-//     userquantity= purchase.quantity;
-//     console.log(`You chose to purchase ${userquantity} ${databaseres[useritem-1].product_name}(s).`);
-//     checkforquantity();
-
-//   })
-
-
-
+function matchQuantity(id, currentQuantity) {
+   connection.query("select * from products where item_id =?", [id], function (err, res) {
+       console.log("Available stock for your order : " + res[0].stock_quantity);
+       var availableStock;
+       var totalCost;
+       if (res[0].stock_quantity >= currentQuantity) {
+           availableStock = (res[0].stock_quantity - currentQuantity);
+           totalCost = parseFloat(res[0].price * currentQuantity);
+           console.log(" Item available after placing order is " + availableStock)
+           connection.query("UPDATE products SET ? where ?",
+               [{ stock_quantity: availableStock },
+               { item_id: id }]
+               , function (err, response) {
+                   if (err) throw err;
+                   // console.table(response)
+               })
+           console.log("Your item is available. Total cost for this transaction is $" + totalCost);
+           connection.query("SELECT * FROM products where item_id=?",
+               [id]
+               , function (err, response) {
+                   if (err) throw err;
+                   console.table(response)
+               })
+       } else {
+           console.log("Your order exceed current stock. Please choose another item quantity.");
+           questionToBeAsked();
+       }
+   })
+}``
 
 
